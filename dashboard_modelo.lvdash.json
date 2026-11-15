@@ -1,0 +1,1369 @@
+{
+  "datasets": [
+    {
+      "name": "f1c55b95",
+      "displayName": "kpis_lgbm",
+      "queryLines": [
+        "-- dataset: kpis_lgbm\r\n",
+        "SELECT round(auc,3) AS auc, round(gini,3) AS gini, round(ks,3) AS ks\r\n",
+        "FROM workspace.credit_risk.model_metrics WHERE split='test' AND modelo='lgbm'"
+      ]
+    },
+    {
+      "name": "77561807",
+      "displayName": "metricas_test",
+      "queryLines": [
+        "-- dataset: metricas_test\r\n",
+        "SELECT modelo, round(gini,4) AS gini, round(gini_ic_inf,4) AS ic_inf, round(gini_ic_sup,4) AS ic_sup,\r\n",
+        "       round(ks,4) AS ks, round(brier,4) AS brier\r\n",
+        "FROM workspace.credit_risk.model_metrics WHERE split='test'"
+      ]
+    },
+    {
+      "name": "d1908ddf",
+      "displayName": "deciles_lgbm",
+      "queryLines": [
+        "-- dataset: deciles_lgbm\r\n",
+        "SELECT decil, n, defaults, round(tasa_real*100,2) AS default_real_pct, round(pd_media*100,2) AS pd_media_pct,\r\n",
+        "       round(lift,2) AS lift, round(pct_defaults_acum*100,1) AS defaults_capturados_pct\r\n",
+        "FROM workspace.credit_risk.model_deciles WHERE modelo='lgbm' AND split='test' ORDER BY decil\r\n"
+      ]
+    },
+    {
+      "name": "3b55958b",
+      "displayName": "importancia",
+      "queryLines": [
+        "-- dataset: importancia\r\n",
+        "SELECT variable, round(pct*100,2) AS importancia_pct\r\n",
+        "FROM workspace.credit_risk.feature_importance ORDER BY pct DESC LIMIT 15"
+      ]
+    },
+    {
+      "name": "507d17e2",
+      "displayName": "seg_educacion",
+      "queryLines": [
+        "-- dataset: seg_educacion   (repite cambiando NAME_EDUCATION_TYPE por NAME_INCOME_TYPE -> seg_ingreso)\r\n",
+        "SELECT f.NAME_EDUCATION_TYPE AS segmento, count(*) AS clientes,\r\n",
+        "       round(avg(f.TARGET)*100,2) AS default_real_pct, round(avg(s.score_lgbm)*100,2) AS pd_media_pct\r\n",
+        "FROM workspace.credit_risk.gold_features f JOIN workspace.credit_risk.gold_scores s ON f.SK_ID_CURR = s.SK_ID_CURR\r\n",
+        "WHERE f.split='test' GROUP BY 1 HAVING count(*) >= 200 ORDER BY 2 DESC\r\n"
+      ]
+    },
+    {
+      "name": "3d9429bb",
+      "displayName": "seg_ingreso",
+      "queryLines": [
+        "-- dataset: seg_ingreso \r\n",
+        "SELECT f.NAME_INCOME_TYPE AS segmento, count(*) AS clientes,\r\n",
+        "       round(avg(f.TARGET)*100,2) AS default_real_pct, round(avg(s.score_lgbm)*100,2) AS pd_media_pct\r\n",
+        "FROM workspace.credit_risk.gold_features f JOIN workspace.credit_risk.gold_scores s ON f.SK_ID_CURR = s.SK_ID_CURR\r\n",
+        "WHERE f.split='test' GROUP BY 1 HAVING count(*) >= 200 ORDER BY 2 DESC"
+      ]
+    },
+    {
+      "name": "880600db",
+      "displayName": "bandas",
+      "queryLines": [
+        "-- dataset: bandas\r\n",
+        "SELECT CASE WHEN score_lgbm < 0.05 THEN '1 Bajo (<5%)' WHEN score_lgbm < 0.15 THEN '2 Medio (5-15%)'\r\n",
+        "            ELSE '3 Alto (>=15%)' END AS banda,\r\n",
+        "       count(*) AS clientes, round(avg(TARGET)*100,2) AS default_real_pct, round(avg(score_lgbm)*100,2) AS pd_media_pct\r\n",
+        "FROM workspace.credit_risk.gold_scores WHERE split='test' GROUP BY 1 ORDER BY 1"
+      ]
+    },
+    {
+      "name": "7bc908af",
+      "displayName": "deciles_fmt",
+      "queryLines": [
+        "-- dataset: deciles_fmt\r\n",
+        "SELECT decil,\r\n",
+        "       decil * 10                         AS pct_clientes,\r\n",
+        "       round(tasa_real * 100, 2)          AS `Default real (%)`,\r\n",
+        "       round(pd_media * 100, 2)           AS `PD predicha (%)`,\r\n",
+        "       round(pct_defaults_acum * 100, 1)  AS `Defaults capturados (%)`\r\n",
+        "FROM workspace.credit_risk.model_deciles\r\n",
+        "WHERE modelo = 'lgbm' AND split = 'test'\r\n",
+        "ORDER BY decil"
+      ]
+    },
+    {
+      "name": "afbb5be6",
+      "displayName": "comparacion_modelos",
+      "queryLines": [
+        "-- dataset: comparacion_modelos\r\n",
+        "SELECT CASE modelo WHEN 'lgbm' THEN 'LightGBM' WHEN 'xgb' THEN 'XGBoost' ELSE 'Scorecard WoE' END AS Modelo,\r\n",
+        "       concat(format_number(gini,3), '  [', format_number(gini_ic_inf,3), ' – ', format_number(gini_ic_sup,3), ']') AS `Gini (IC 95%)`,\r\n",
+        "       format_number(auc,3)   AS AUC,\r\n",
+        "       format_number(ks,3)    AS KS,\r\n",
+        "       format_number(brier,4) AS Brier\r\n",
+        "FROM workspace.credit_risk.model_metrics\r\n",
+        "WHERE split = 'test'\r\n",
+        "ORDER BY gini DESC"
+      ]
+    },
+    {
+      "name": "5eca997b",
+      "displayName": "kpis_portafolio",
+      "queryLines": [
+        "-- dataset: kpis_portafolio\r\n",
+        "SELECT count(*) AS clientes,\r\n",
+        "       round(avg(TARGET) * 100, 2)      AS default_real,\r\n",
+        "       round(avg(score_lgbm) * 100, 2)  AS pd_media\r\n",
+        "FROM workspace.credit_risk.gold_scores\r\n",
+        "WHERE split = 'test'"
+      ]
+    },
+    {
+      "name": "d9ea5ba7",
+      "displayName": "bandas_riesgo",
+      "queryLines": [
+        "-- dataset: bandas_riesgo\r\n",
+        "SELECT CASE WHEN score_lgbm < 0.05 THEN 'A · <5%'\r\n",
+        "            WHEN score_lgbm < 0.10 THEN 'B · 5–10%'\r\n",
+        "            WHEN score_lgbm < 0.20 THEN 'C · 10–20%'\r\n",
+        "            ELSE 'D · ≥20%' END                            AS Banda,\r\n",
+        "       count(*)                                            AS Clientes,\r\n",
+        "       round(100.0 * count(*) / sum(count(*)) OVER (), 1)  AS `% de la cartera`,\r\n",
+        "       round(avg(TARGET) * 100, 2)                         AS `Default real (%)`,\r\n",
+        "       round(avg(score_lgbm) * 100, 2)                     AS `PD predicha (%)`\r\n",
+        "FROM workspace.credit_risk.gold_scores\r\n",
+        "WHERE split = 'test'\r\n",
+        "GROUP BY 1\r\n",
+        "ORDER BY 1"
+      ]
+    },
+    {
+      "name": "881d8693",
+      "displayName": "seg_educacion",
+      "queryLines": [
+        "-- dataset: seg_educacion\r\n",
+        "SELECT CASE f.NAME_EDUCATION_TYPE\r\n",
+        "         WHEN 'Higher education' THEN 'Superior'\r\n",
+        "         WHEN 'Secondary / secondary special' THEN 'Secundaria'\r\n",
+        "         WHEN 'Incomplete higher' THEN 'Superior incompleta'\r\n",
+        "         WHEN 'Lower secondary' THEN 'Secundaria baja'\r\n",
+        "         ELSE f.NAME_EDUCATION_TYPE END        AS Segmento,\r\n",
+        "       count(*)                                AS Clientes,\r\n",
+        "       round(avg(f.TARGET) * 100, 2)           AS `Default real (%)`,\r\n",
+        "       round(avg(s.score_lgbm) * 100, 2)       AS `PD predicha (%)`\r\n",
+        "FROM workspace.credit_risk.gold_features f\r\n",
+        "JOIN workspace.credit_risk.gold_scores s ON f.SK_ID_CURR = s.SK_ID_CURR\r\n",
+        "WHERE f.split = 'test'\r\n",
+        "GROUP BY 1\r\n",
+        "HAVING count(*) >= 200\r\n",
+        "ORDER BY `Default real (%)` DESC"
+      ]
+    },
+    {
+      "name": "78a69d9a",
+      "displayName": "seg_ingreso",
+      "queryLines": [
+        "-- dataset: seg_ingreso\r\n",
+        "SELECT CASE f.NAME_INCOME_TYPE\r\n",
+        "         WHEN 'Working' THEN 'Dependiente'\r\n",
+        "         WHEN 'Commercial associate' THEN 'Socio comercial'\r\n",
+        "         WHEN 'Pensioner' THEN 'Pensionista'\r\n",
+        "         WHEN 'State servant' THEN 'Servidor público'\r\n",
+        "         ELSE f.NAME_INCOME_TYPE END           AS Segmento,\r\n",
+        "       count(*)                                AS Clientes,\r\n",
+        "       round(avg(f.TARGET) * 100, 2)           AS `Default real (%)`,\r\n",
+        "       round(avg(s.score_lgbm) * 100, 2)       AS `PD predicha (%)`\r\n",
+        "FROM workspace.credit_risk.gold_features f\r\n",
+        "JOIN workspace.credit_risk.gold_scores s ON f.SK_ID_CURR = s.SK_ID_CURR\r\n",
+        "WHERE f.split = 'test'\r\n",
+        "GROUP BY 1\r\n",
+        "HAVING count(*) >= 200\r\n",
+        "ORDER BY `Default real (%)` DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "d816cbca",
+      "displayName": "Modelo",
+      "layout": [
+        {
+          "widget": {
+            "name": "gini",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f1c55b95",
+                  "fields": [
+                    {
+                      "name": "sum(gini)",
+                      "expression": "SUM(`gini`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Gini (test)</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "IC 95%: 0.54 – 0.57",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(gini)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "auc",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f1c55b95",
+                  "fields": [
+                    {
+                      "name": "sum(auc)",
+                      "expression": "SUM(`auc`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">AUC (test)</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Prob. de ordenar bien un par moroso/cumplido",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(auc)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ks",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "f1c55b95",
+                  "fields": [
+                    {
+                      "name": "sum(ks)",
+                      "expression": "SUM(`ks`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">KS (test)</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Separación máxima entre morosos y cumplidos",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(ks)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "lift-por-decil-1",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d1908ddf",
+                  "fields": [
+                    {
+                      "name": "decil",
+                      "expression": "`decil`"
+                    },
+                    {
+                      "name": "lift",
+                      "expression": "`lift`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Lift por decil</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Lift 1 = tasa promedio de la cartera",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "decil",
+                  "axis": {
+                    "title": "Decil de riesgo (1 = más riesgoso)"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "lift",
+                  "axis": {
+                    "title": "Lift (veces la tasa media)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "cb99be20",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "3b55958b",
+                  "fields": [
+                    {
+                      "name": "importancia_pct",
+                      "expression": "`importancia_pct`"
+                    },
+                    {
+                      "name": "variable",
+                      "expression": "`variable`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Importancia de variables (top 15)</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "% de la ganancia total de LightGBM",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "importancia_pct",
+                  "axis": {
+                    "title": "Importancia (% de la ganancia total)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "variable",
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "calibracion-por-decil",
+            "queries": [
+              {
+                "name": "combo_primary_1",
+                "query": {
+                  "datasetName": "7bc908af",
+                  "fields": [
+                    {
+                      "name": "decil",
+                      "expression": "`decil`"
+                    },
+                    {
+                      "name": "Default real (%)",
+                      "expression": "`Default real (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              },
+              {
+                "name": "combo_primary_2",
+                "query": {
+                  "datasetName": "7bc908af",
+                  "fields": [
+                    {
+                      "name": "decil",
+                      "expression": "`decil`"
+                    },
+                    {
+                      "name": "PD predicha (%)",
+                      "expression": "`PD predicha (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Calibración por decil</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Decil 1 = clientes de mayor riesgo",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "decil",
+                  "axis": {
+                    "title": "Decil de riesgo (1 = más riesgoso)"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "type": "custom",
+                      "max": 35
+                    },
+                    "reverse": false
+                  },
+                  "layers": [
+                    {
+                      "visual": "bar",
+                      "encodings": {
+                        "value": {
+                          "fields": [
+                            {
+                              "fieldName": "Default real (%)"
+                            }
+                          ]
+                        },
+                        "color": {
+                          "legend": {
+                            "hide": false
+                          }
+                        },
+                        "label": {
+                          "show": false
+                        }
+                      },
+                      "queryName": "combo_primary_1"
+                    },
+                    {
+                      "visual": "line",
+                      "mark": {
+                        "lineShape": "linear"
+                      },
+                      "encodings": {
+                        "value": {
+                          "fields": [
+                            {
+                              "fieldName": "PD predicha (%)"
+                            }
+                          ]
+                        },
+                        "color": {
+                          "legend": {
+                            "hide": false
+                          }
+                        }
+                      },
+                      "queryName": "combo_primary_2"
+                    }
+                  ],
+                  "axis": {
+                    "title": "Tasa de default (%)",
+                    "hideGrid": false,
+                    "hideLabels": false
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "defaults-capturados",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "7bc908af",
+                  "fields": [
+                    {
+                      "name": "pct_clientes",
+                      "expression": "`pct_clientes`"
+                    },
+                    {
+                      "name": "Defaults capturados (%)",
+                      "expression": "`Defaults capturados (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Defaults capturados</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Acumulado, clientes ordenados de mayor a menor riesgo",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "pct_clientes",
+                  "axis": {
+                    "title": "% de clientes más riesgosos (acumulado)"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "Defaults capturados (%)",
+                  "axis": {
+                    "title": "% de defaults capturados"
+                  },
+                  "scale": {
+                    "type": "quantitative",
+                    "domain": {
+                      "type": "custom",
+                      "min": 0,
+                      "max": 100
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "comparacion-de-modelos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "afbb5be6",
+                  "fields": [
+                    {
+                      "name": "Modelo",
+                      "expression": "`Modelo`"
+                    },
+                    {
+                      "name": "Gini (IC 95%)",
+                      "expression": "`Gini (IC 95%)`"
+                    },
+                    {
+                      "name": "AUC",
+                      "expression": "`AUC`"
+                    },
+                    {
+                      "name": "KS",
+                      "expression": "`KS`"
+                    },
+                    {
+                      "name": "Brier",
+                      "expression": "`Brier`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Comparación de modelos</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Métricas en test; intervalo de confianza bootstrap con 200 remuestreos",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "Modelo"
+                  },
+                  {
+                    "fieldName": "Gini (IC 95%)"
+                  },
+                  {
+                    "fieldName": "AUC"
+                  },
+                  {
+                    "fieldName": "KS"
+                  },
+                  {
+                    "fieldName": "Brier"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 12,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "4a229324",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "# Scoring de probabilidad de default · Home Credit\n",
+                    "\n",
+                    "### Modelo LightGBM evaluado en 61,503 clientes de prueba, no usados para entrenar ni afinar."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "924a756e",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "Fuente: Kaggle Home Credit Default Risk. Partición aleatoria 60/20/20 estratificada; sin variable temporal, por lo que no hay validación fuera de tiempo. Gini = 2·AUC − 1."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "f2998b14",
+      "displayName": "Portafolio",
+      "layout": [
+        {
+          "widget": {
+            "name": "665a0c01",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "# Portafolio · distribución del riesgo\n",
+                    "\n",
+                    "### Clientes del conjunto de prueba, clasificados por la PD que estima LightGBM.\n",
+                    "<p>&nbsp;</p>\n"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "clientes-evaluados-test",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5eca997b",
+                  "fields": [
+                    {
+                      "name": "clientes",
+                      "expression": "`clientes`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Clientes evaluados (test)</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "clientes",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "default-observado-percent",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5eca997b",
+                  "fields": [
+                    {
+                      "name": "default_real",
+                      "expression": "`default_real`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">Default observado (%)</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "default_real"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "pd-media-predicha",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5eca997b",
+                  "fields": [
+                    {
+                      "name": "pd_media",
+                      "expression": "`pd_media`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">PD media predicha (%)</span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "pd_media"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 2,
+            "width": 4,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "porcentaje-de-la-cartera-bandas-riesgo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d9ea5ba7",
+                  "fields": [
+                    {
+                      "name": "Banda",
+                      "expression": "`Banda`"
+                    },
+                    {
+                      "name": "% de la cartera",
+                      "expression": "`% de la cartera`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block\">Más de la mitad de la cartera está en la banda A (riesgo bajo)</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Bandas según la PD estimada: A < 5%, B 5–10%, C 10–20%, D ≥ 20%",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Banda",
+                  "axis": {
+                    "title": "Banda de riesgo (PD estimada)"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "% de la cartera",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "dbb0b36a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "d9ea5ba7",
+                  "fields": [
+                    {
+                      "name": "Banda",
+                      "expression": "`Banda`"
+                    },
+                    {
+                      "name": "Default real (%)",
+                      "expression": "`Default real (%)`"
+                    },
+                    {
+                      "name": "PD predicha (%)",
+                      "expression": "`PD predicha (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block\">La PD predicha coincide con el default real en las cuatro bandas</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "El default real sube de ≈2.6% en la banda A a ≈31% en la D",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Banda",
+                  "axis": {
+                    "title": "Banda de riesgo (PD estimada)"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "Default real (%)"
+                    },
+                    {
+                      "fieldName": "PD predicha (%)"
+                    }
+                  ],
+                  "axis": {
+                    "title": "Tasa de default (%)"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 4,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "la-pd-predicha-sigue-al-default-real-todos-niveles-educativos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "881d8693",
+                  "fields": [
+                    {
+                      "name": "Segmento",
+                      "expression": "`Segmento`"
+                    },
+                    {
+                      "name": "Default real (%)",
+                      "expression": "`Default real (%)`"
+                    },
+                    {
+                      "name": "PD predicha (%)",
+                      "expression": "`PD predicha (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">La PD predicha sigue al default real en todos los niveles educativos</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Diferencia máxima entre real y predicha: ≈0.7 puntos (superior incompleta).",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Segmento",
+                  "axis": {
+                    "labelAngle": 45,
+                    "title": "Nivel educativo"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "Default real (%)"
+                    },
+                    {
+                      "fieldName": "PD predicha (%)"
+                    }
+                  ],
+                  "axis": {
+                    "title": "Tasa de default (%)"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 8
+          }
+        },
+        {
+          "widget": {
+            "name": "93c3679e",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "Bandas según PD estimada: A < 5%, B 5–10%, C 10–20%, D ≥ 20%. Se omiten segmentos con menos de 200 clientes en prueba. Todas las cifras son fuera de muestra."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 18,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "la-pd-predicha-sigue-al-default-real-en-todos-tipos-ingreso",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "78a69d9a",
+                  "fields": [
+                    {
+                      "name": "Segmento",
+                      "expression": "`Segmento`"
+                    },
+                    {
+                      "name": "Default real (%)",
+                      "expression": "`Default real (%)`"
+                    },
+                    {
+                      "name": "PD predicha (%)",
+                      "expression": "`PD predicha (%)`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "showDescription": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\">La PD predicha sigue al default real en todos los tipos de ingreso</span>",
+                  "fields": []
+                },
+                "description": {
+                  "value": "Diferencia máxima entre real y predicha: ≈0.4 puntos.",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "Segmento",
+                  "axis": {
+                    "labelAngle": 45,
+                    "hideTitle": false,
+                    "title": "Tipo de ingreso"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "Default real (%)"
+                    },
+                    {
+                      "fieldName": "PD predicha (%)"
+                    }
+                  ],
+                  "axis": {
+                    "title": "Tasa de default (%)"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 10,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "ae8cc877",
+      "displayName": "Filtros globales",
+      "layout": [
+        {
+          "widget": {
+            "name": "d96cf087",
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": []
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
