@@ -22,10 +22,16 @@ Modelo de probabilidad de incumplimiento (PD) sobre el dataset público [Home Cr
 | XGBoost | 0.557 [0.543 – 0.569] | 0.779 | 0.419 | 0.0663 |
 | Scorecard WoE + regresión logística | 0.521 [0.507 – 0.532] | 0.761 | 0.390 | 0.0678 |
 
+**Portafolio:** distribución del riesgo por banda y por segmento.
+
+![Dashboard · portafolio](docs/dashboard_portafolio1.png)
+![Dashboard · portafolio](docs/dashboard_portafolio2.png)
+
 - **Discriminación:** el 10% de clientes de mayor riesgo concentra el 37.4% de los defaults y el 20% concentra el 55.5%. La tasa de default real va del 30.2% en el decil más riesgoso al 1.0% en el menos riesgoso.
 - **Calibración:** la PD predicha coincide con la tasa real en todos los deciles (diferencias de medio punto porcentual o menos, salvo el decil 1, subestimado en unos 0.8 puntos). No se balancearon las clases, por eso las probabilidades se mantienen interpretables.
 - **Boosting vs. scorecard:** los intervalos no se solapan; el costo de usar un modelo interpretable es de unos 0.04 de Gini. Entre LightGBM y XGBoost no hay diferencia distinguible.
 - **Importancia de variables:** los puntajes externos (`EXT_SOURCE_*`) suman cerca del 37% de la ganancia. Cuatro de las diez variables principales se construyeron en este proyecto (`ANNUITY_CREDIT_RATIO`, `CREDIT_GOODS_RATIO`, `INST_PCT_TARDE`, `BUR_RATIO_DEUDA`).
+- **Consistencia por segmento:** la PD media predicha (8.01%) es casi igual al default observado (8.07%), y la PD sigue al default real en cada banda de riesgo y en los segmentos por nivel educativo y tipo de ingreso, con diferencias menores a un punto porcentual.
 
 ## Datos
 
